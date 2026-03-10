@@ -1,0 +1,352 @@
+</html><!DOCTYPE html>
+<html>
+<head>
+<title>Nexora Event App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* =================== App-Style CSS =================== */
+/* CO1: Layout & Styling for App Format */
+
+body {
+    margin: 0;
+    font-family: 'Poppins', 'Segoe UI', sans-serif;
+    background: #f0f2f5;
+    color: #333;
+}
+
+.app-container {
+    max-width: 420px;
+    margin: 0 auto;
+    background: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+}
+
+/* ------------------ Login / Register ------------------ */
+.auth-box {
+    margin-top: 80px;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+}
+
+.auth-box h2 {
+    text-align: center;
+    color: #4a00e0;
+    margin-bottom: 20px;
+}
+
+.auth-box input, .auth-box select {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.auth-box button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 12px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(45deg,#4a00e0,#8e2de2);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.auth-box .link {
+    text-align: center;
+    margin-top: 12px;
+    color: #4a00e0;
+    cursor: pointer;
+}
+
+/* ------------------ Dashboard ------------------ */
+.dashboard {
+    display: none;
+    flex-direction: column;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #fff;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.cards {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.card {
+    flex: 1;
+    background: #fff;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+}
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.controls input, .controls select {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.events {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.event {
+    background: #fff;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+}
+
+.event button {
+    margin-top: 10px;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(45deg,#4a00e0,#8e2de2);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.history {
+    background: #fff;
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 15px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+}
+
+@media (max-width: 420px) {
+    .cards {
+        flex-direction: column;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+
+<!-- CO2: Login Form -->
+<div class="auth-box" id="loginBox">
+<h2>Login</h2>
+<input type="text" id="loginUser" placeholder="Username">
+<input type="password" id="loginPass" placeholder="Password">
+<button onclick="login()">Login</button>
+<div class="link" onclick="showRegister()">Create Account</div>
+</div>
+
+<!-- CO2: Register Form -->
+<div class="auth-box" id="registerBox" style="display:none;">
+<h2>Register</h2>
+<input type="text" id="regUser" placeholder="Username">
+<input type="password" id="regPass" placeholder="Password">
+<button onclick="register()">Register</button>
+<div class="link" onclick="showLogin()">Back to Login</div>
+</div>
+
+<!-- CO2: Dashboard -->
+<div class="dashboard" id="dashboard">
+
+<div class="navbar">
+<h3>Welcome, <span id="userDisplay"></span></h3>
+<button onclick="logout()">Logout</button>
+</div>
+
+<div class="cards">
+<div class="card">
+<h4>Total Events</h4>
+<p id="totalEvents">0</p>
+</div>
+<div class="card">
+<h4>Total Bookings</h4>
+<p id="totalBookings">0</p>
+</div>
+</div>
+
+<div class="controls">
+<input type="text" placeholder="Search Event" onkeyup="searchEvent(this.value)">
+<select id="stateFilter" onchange="updateCities(); filterByLocation()">
+<option value="">Select State</option>
+</select>
+<select id="cityFilter" onchange="filterByLocation()">
+<option value="">Select City</option>
+</select>
+<select onchange="sortEvents(this.value)">
+<option value="">Sort By</option>
+<option value="price">Price Low → High</option>
+<option value="date">Date Wise</option>
+<option value="popularity">Popularity Wise</option>
+</select>
+</div>
+
+<div class="events" id="eventList"></div>
+
+<div class="history">
+<h3>Booking History</h3>
+<ul id="historyList"></ul>
+</div>
+
+</div>
+</div>
+
+<script>
+/* ================= JS Section ================= */
+let users=[], bookings=[], currentUser="";
+let stateCityData={
+"Telangana":["Hyderabad","Warangal"],
+"Karnataka":["Bangalore","Mysore"],
+"Tamil Nadu":["Chennai","Madurai"],
+"Maharashtra":["Mumbai","Pune"],
+"Delhi":["New Delhi"],
+"West Bengal":["Kolkata"],
+"Uttar Pradesh":["Varanasi","Lucknow"],
+"Punjab":["Amritsar"],
+"Kerala":["Kochi"],
+"Gujarat":["Ahmedabad"],
+"Goa":["Panaji"]
+};
+
+/* CO4: Populate State Dropdown */
+let stateSelect=document.getElementById("stateFilter");
+for(let state in stateCityData){
+let option=document.createElement("option");
+option.value=state;
+option.text=state;
+stateSelect.appendChild(option);
+}
+
+/* CO4: Update City Dropdown */
+function updateCities(){
+let state=stateFilter.value;
+cityFilter.innerHTML="<option value=''>Select City</option>";
+if(stateCityData[state]){
+stateCityData[state].forEach(city=>{
+let option=document.createElement("option");
+option.value=city;
+option.text=city;
+cityFilter.appendChild(option);
+});
+}
+}
+
+/* CO3+CO4: Pan-India Festivals */
+let festivalNames=["Holi Festival","Diwali Celebration","Eid Celebration","Christmas Carnival","Guru Nanak Jayanti","Onam Festival","Durga Puja","Navratri Garba"];
+let events=[];
+festivalNames.forEach(festival=>{
+for(let state in stateCityData){
+events.push({
+name: festival,
+state: state,
+city: stateCityData[state][0],
+venue: "Main Grounds",
+price: Math.floor(Math.random()*500)+300,
+date: "2026-03-08",
+start: "10:00 AM",
+end: "05:00 PM",
+seats:100,
+popularity: Math.floor(Math.random()*10)+1
+});
+}
+});
+
+/* CO4: Show/Hide Login/Register */
+function showRegister(){loginBox.style.display="none";registerBox.style.display="block";}
+function showLogin(){registerBox.style.display="none";loginBox.style.display="block";}
+
+/* CO3+CO4: Register/Login */
+function register(){
+users.push({user:regUser.value,pass:regPass.value});
+alert("Registered Successfully!"); showLogin();
+}
+function login(){
+let found=users.find(x=>x.user==loginUser.value && x.pass==loginPass.value);
+if(found){
+currentUser=loginUser.value;
+userDisplay.innerText=currentUser;
+loginBox.style.display="none";
+dashboard.style.display="flex";
+displayEvents(events);
+updateStats();
+}else alert("Invalid Login");
+}
+function logout(){dashboard.style.display="none";loginBox.style.display="block";}
+
+/* CO4: Display Events */
+function displayEvents(list){
+eventList.innerHTML="";
+if(list.length===0){eventList.innerHTML="<h3>No Events Found</h3>"; return;}
+list.forEach((e,i)=>{
+eventList.innerHTML+=`<div class="event">
+<h4>${e.name}</h4>
+<p>📍 ${e.state}, ${e.city}</p>
+<p>🏢 ${e.venue}</p>
+<p>📅 ${e.date}</p>
+<p>⏰ ${e.start}-${e.end}</p>
+<p>💰 ₹${e.price}</p>
+<p>🎟 Seats: ${e.seats}</p>
+<p>🔥 Popularity: ${e.popularity}</p>
+<button onclick="bookEvent(${i})">Book Ticket</button>
+</div>`;
+});
+totalEvents.innerText=list.length;
+}
+
+/* CO4: Booking */
+function bookEvent(index){
+if(events[index].seats>0){events[index].seats--;
+bookings.push(events[index].name);
+historyList.innerHTML+=`<li>${events[index].name}</li>`;
+updateStats();
+displayEvents(events);
+alert("Ticket Booked!");} else alert("No Seats Available!");}
+
+/* CO4: Stats */
+function updateStats(){totalBookings.innerText=bookings.length;}
+
+/* CO4: Sort/Search/Filter */
+function sortEvents(type){
+if(type=="price") events.sort((a,b)=>a.price-b.price);
+if(type=="date") events.sort((a,b)=>new Date(a.date)-new Date(b.date));
+if(type=="popularity") events.sort((a,b)=>b.popularity-a.popularity);
+displayEvents(events);
+}
+function searchEvent(keyword){
+let filtered=events.filter(e=>e.name.toLowerCase().includes(keyword.toLowerCase())||e.city.toLowerCase().includes(keyword.toLowerCase())||e.state.toLowerCase().includes(keyword.toLowerCase()));
+displayEvents(filtered);
+}
+function filterByLocation(){
+let state=stateFilter.value, city=cityFilter.value;
+let filtered=events.filter(e=>(state==""||e.state==state)&&(city==""||e.city==city));
+displayEvents(filtered);
+}
+</script>
+
+</body>
+</html>
