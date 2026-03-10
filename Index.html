@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Nexora Dynamic Event Connect</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- CO5: Meta tags for responsive and SEO-friendly pages -->
+
+<style>
+/* CO1: Introductory CSS Styling – CSS syntax, typography, colors, spacing */
+/* CO2: Comprehensive CSS Layouts – Flexbox, responsive layouts, transitions */
+
+body {
+    margin: 0;
+    font-family: 'Poppins', 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    color: #333;
+}
+
+.container {
+    width: 380px;
+    margin: 80px auto;
+    background: #ffffff;
+    padding: 30px 25px;
+    border-radius: 15px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+h2 {
+    text-align: center;
+    color: #4a00e0;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(45deg, #4a00e0, #8e2de2);
+    color: white;
+    cursor: pointer;
+}
+
+.link {
+    text-align: center;
+    margin-top: 12px;
+    color: #4a00e0;
+    cursor: pointer;
+}
+
+.navbar {
+    background: #ffffff;
+    padding: 15px 20px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.cards {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.card {
+    flex: 1;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.events {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+}
+
+.event {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    width: 280px;
+}
+
+.history {
+    margin-top: 25px;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+/* CO2: Media Queries for responsive layout */
+@media (max-width: 768px) {
+    .cards, .events {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- CO2: HTML Forms and Input Handling -->
+<div class="container" id="loginBox">
+<h2>Login</h2>
+<input type="text" id="loginUser" placeholder="Username">
+<input type="password" id="loginPass" placeholder="Password">
+<button onclick="login()">Login</button> 
+<!-- CO4: Event Handling using JavaScript -->
+<div class="link" onclick="showRegister()">Create Account</div>
+</div>
+
+<!-- CO2: Form elements and validation structure -->
+<div class="container" id="registerBox" style="display:none;">
+<h2>Register</h2>
+<input type="text" id="regUser" placeholder="Username">
+<input type="password" id="regPass" placeholder="Password">
+<button onclick="register()">Register</button>
+<div class="link" onclick="showLogin()">Back to Login</div>
+</div>
+
+<!-- CO2: Structured page layout -->
+<div class="dashboard" id="dashboard" style="display:none">
+
+<div class="navbar">
+<h3>Welcome, <span id="userDisplay"></span></h3>
+<!-- CO4: DOM Manipulation -->
+<button onclick="logout()" style="width:auto;">Logout</button>
+</div>
+
+<div class="cards">
+<div class="card">
+<h4>Total Events</h4>
+<p id="totalEvents">0</p>
+</div>
+<div class="card">
+<h4>Total Bookings</h4>
+<p id="totalBookings">0</p>
+</div>
+</div>
+
+<div class="controls">
+<input type="text" placeholder="Search Event" onkeyup="searchEvent(this.value)">
+<select id="stateFilter" onchange="updateCities(); filterByLocation()">
+<option value="">Select State</option>
+</select>
+<select id="cityFilter" onchange="filterByLocation()">
+<option value="">Select City</option>
+</select>
+<select onchange="sortEvents(this.value)">
+<option value="">Sort By</option>
+<option value="price">Price Low → High</option>
+<option value="date">Date Wise</option>
+<option value="popularity">Popularity Wise</option>
+</select>
+</div>
+
+<div class="events" id="eventList"></div>
+
+<div class="history">
+<h3>Booking History</h3>
+<ul id="historyList"></ul>
+</div>
+
+</div>
+
+<script>
+
+/* CO3: JavaScript Fundamentals – Variables, Arrays, Objects */
+let users = [];
+let bookings = [];
+let currentUser = "";
+
+/* CO3: Objects & Arrays for structured data */
+let stateCityData={
+"Telangana":["Hyderabad","Warangal"],
+"Karnataka":["Bangalore","Mysore"],
+"Tamil Nadu":["Chennai","Madurai"],
+"Maharashtra":["Mumbai","Pune"],
+"Delhi":["New Delhi"]
+};
+
+/* CO4: DOM Manipulation */
+let stateSelect=document.getElementById("stateFilter");
+for(let state in stateCityData){
+let option=document.createElement("option");
+option.value=state;
+option.text=state;
+stateSelect.appendChild(option);
+}
+
+/* CO4: Dynamic DOM Updates */
+function updateCities(){
+let state=stateFilter.value;
+cityFilter.innerHTML="<option value=''>Select City</option>";
+if(stateCityData[state]){
+stateCityData[state].forEach(city=>{
+let option=document.createElement("option");
+option.value=city;
+option.text=city;
+cityFilter.appendChild(option);
+});
+}
+}
+
+/* CO3: Array data structure for events */
+let festivalNames = ["Holi Festival","Diwali Celebration","Eid Celebration","Christmas Carnival"];
+let events = [];
+
+festivalNames.forEach(festival => {
+    for(let state in stateCityData){
+        events.push({
+            name: festival,
+            state: state,
+            city: stateCityData[state][0],
+            venue: "Main Grounds",
+            price: Math.floor(Math.random()*500)+300,
+            date: "2026-03-08",
+            start: "10:00 AM",
+            end: "05:00 PM",
+            seats: 100,
+            popularity: Math.floor(Math.random()*10)+1
+        });
+    }
+});
+
+/* CO4: DOM interaction */
+function showRegister(){loginBox.style.display="none";registerBox.style.display="block";}
+function showLogin(){registerBox.style.display="none";loginBox.style.display="block";}
+
+/* CO3: Functions, Conditions */
+function register(){
+users.push({user:regUser.value,pass:regPass.value});
+alert("Registered Successfully!");
+showLogin();
+}
+
+/* CO3 + CO4: Array search and DOM updates */
+function login(){
+let found=users.find(x=>x.user==loginUser.value && x.pass==loginPass.value);
+if(found){
+currentUser=loginUser.value;
+userDisplay.innerText=currentUser;
+loginBox.style.display="none";
+dashboard.style.display="block";
+displayEvents(events);
+updateStats();
+}else alert("Invalid Login");
+}
+
+/* CO4: Event Handling */
+function logout(){
+dashboard.style.display="none";
+loginBox.style.display="block";
+}
+
+/* CO4: Dynamic DOM Manipulation */
+function displayEvents(list){
+eventList.innerHTML="";
+list.forEach((e,i)=>{
+eventList.innerHTML+=`
+<div class="event">
+<h4>${e.name}</h4>
+<p>${e.state}, ${e.city}</p>
+<p>${e.venue}</p>
+<p>${e.date}</p>
+<p>${e.start} - ${e.end}</p>
+<p>₹${e.price}</p>
+<p>Seats: ${e.seats}</p>
+<p>Popularity: ${e.popularity}</p>
+<button onclick="bookEvent(${i})">Book Ticket</button>
+</div>`;
+});
+totalEvents.innerText=list.length;
+}
+
+/* CO3: Array operations */
+function bookEvent(index){
+if(events[index].seats>0){
+events[index].seats--;
+bookings.push(events[index].name);
+historyList.innerHTML+=`<li>${events[index].name}</li>`;
+updateStats();
+displayEvents(events);
+alert("Ticket Booked!");
+}else alert("No Seats Available!");
+}
+
+/* CO4: DOM updates */
+function updateStats(){
+totalBookings.innerText=bookings.length;
+}
+
+/* CO3: Sorting using array methods */
+function sortEvents(type){
+if(type=="price") events.sort((a,b)=>a.price-b.price);
+if(type=="date") events.sort((a,b)=>new Date(a.date)-new Date(b.date));
+if(type=="popularity") events.sort((a,b)=>b.popularity-a.popularity);
+displayEvents(events);
+}
+
+/* CO3: Searching with array filtering */
+function searchEvent(keyword){
+let filtered=events.filter(e=>
+e.name.toLowerCase().includes(keyword.toLowerCase()) ||
+e.city.toLowerCase().includes(keyword.toLowerCase()) ||
+e.state.toLowerCase().includes(keyword.toLowerCase())
+);
+displayEvents(filtered);
+}
+
+/* CO3: Filtering data */
+function filterByLocation(){
+let state=stateFilter.value;
+let city=cityFilter.value;
+let filtered=events.filter(e=>
+(state==""||e.state==state) &&
+(city==""||e.city==city)
+);
+displayEvents(filtered);
+}
+
+</script>
+</body>
+</html>s
